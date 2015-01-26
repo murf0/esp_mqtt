@@ -2,4 +2,9 @@
 .project
 build/
 firmware/
-
+blank.bin
+dist/
+esptool.egg-info
+esptool.py
+flash.sh
+include/user_config.h
