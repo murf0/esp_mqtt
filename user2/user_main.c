@@ -27,13 +27,6 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 */
-
-/* Ok some tips
- * Fatal exception (28): = Trying to use a freed pointer. (aka sending a message with mqtt, then freeing the char buffer)
- *
- *
- */
-
 #include "ets_sys.h"
 #include "driver/uart.h"
 #include "osapi.h"
@@ -56,7 +49,7 @@ static volatile os_timer_t ds18b20_timer;
 MQTT_Client mqttClient;
 char statustopic[64];
 int GPIOS[6] = {2,12,13,14,15,16};
-int deepsleep = 60; // Deep sleep when mqtt-msg recieved. After the timer is up ESP will wake as from boot (rst pin pulled from
+
 
 void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status) {
 	if(status == STATION_GOT_IP){
@@ -66,19 +59,12 @@ void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status) {
 
 void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
-    char tBuf[128];
-    int temperature;
+    char temperature[128];
     os_sprintf(statustopic,"%s%s/status",sysCfg.mqtt_root_topic,sysCfg.device_id);
-    if(dbg==1) INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
+    INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
     if(dbg==1) INFO("TEST DS18B20\n");
-    //Subscribe to the statustopic. When message has been delivered we will deep-sleep to conserve energy
-    MQTT_Subscribe(client, statustopic, 0);
-    
-    //Send Temperature Data
-    ds_get_temp(2,tBuf);
-    if(dbg==1) INFO("Temperature: %s \n", tBuf);
-    MQTT_Publish(client, statustopic, tBuf, os_strlen(tBuf), 2, 0);
-    
+    int r=do_ds18b20(2,temperature);
+    MQTT_Publish(client, statustopic, temperature, os_strlen(temperature), 2, 0);
 }
 
 void ICACHE_FLASH_ATTR mqttDisconnectedCb(uint32_t *args) {
@@ -102,8 +88,7 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
 	topicBuf[topic_len] = 0;
 	os_memcpy(dataBuf, data, data_len);
 	dataBuf[data_len] = 0;
-    if(dbg==1) INFO("Received on topic: %s Data: %s\n Going to Sleep for %d\n", topicBuf,dataBuf,deepsleep);
-    system_deep_sleep(1000000*deepsleep);
+
 }
 
 void ICACHE_FLASH_ATTR user_init(void) {
@@ -125,5 +110,10 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	MQTT_OnDisconnected(&mqttClient, mqttDisconnectedCb);
 	MQTT_OnPublished(&mqttClient, mqttPublishedCb);
 	MQTT_OnData(&mqttClient, mqttDataCb);
-    WIFI_Connect(sysCfg.sta_ssid, sysCfg.sta_pwd, wifiConnectCb);
+	WIFI_Connect(sysCfg.sta_ssid, sysCfg.sta_pwd, wifiConnectCb);
+    os_delay_us(1000000*20);
+    //deep_sleep_set_option(2);
+    system_deep_sleep(1000000*60);
+    
+
 }
