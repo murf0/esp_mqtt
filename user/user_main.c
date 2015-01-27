@@ -37,21 +37,13 @@
 #include "ets_sys.h"
 #include "driver/uart.h"
 #include "osapi.h"
-#include "mqtt.h"
-#include "wifi.h"
 #include "config.h"
 #include "debug.h"
+#include "mqtt.h"
+#include "wifi.h"
 #include "gpio.h"
-#include "user_interface.h"
 #include "mem.h"
 #include "ds18b20.c"
-
-#define user_procTaskPrio        0
-#define user_procTaskQueueLen    1
-os_event_t    user_procTaskQueue[user_procTaskQueueLen];
-static void user_procTask(os_event_t *events);
-static volatile os_timer_t ds18b20_timer;
-
 
 MQTT_Client mqttClient;
 char statustopic[64];
@@ -68,7 +60,7 @@ void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
     char tBuf[128];
     int temperature;
-    os_sprintf(statustopic,"%s%s/status",sysCfg.mqtt_root_topic,sysCfg.device_id);
+    os_sprintf(statustopic,"iot/%s/status",sysCfg.device_id);
     if(dbg==1) INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
     if(dbg==1) INFO("TEST DS18B20\n");
     //Subscribe to the statustopic. When message has been delivered we will deep-sleep to conserve energy

@@ -30,12 +30,11 @@
 #include "ets_sys.h"
 #include "driver/uart.h"
 #include "osapi.h"
-#include "mqtt.h"
-#include "wifi.h"
 #include "config.h"
 #include "debug.h"
+#include "mqtt.h"
+#include "wifi.h"
 #include "gpio.h"
-#include "user_interface.h"
 #include "mem.h"
 #include "ds18b20.c"
 
@@ -62,8 +61,8 @@ void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
     char temp[64];
     char temperature[128];
-    os_sprintf(subtopic,"%s%s/set",sysCfg.mqtt_root_topic,sysCfg.device_id);
-    os_sprintf(statustopic,"%s%s/status",sysCfg.mqtt_root_topic,sysCfg.device_id);
+    os_sprintf(subtopic,"iot/%s/set",sysCfg.device_id);
+    os_sprintf(statustopic,"iot/%s/status",sysCfg.device_id);
 
 	MQTT_Subscribe(client, subtopic, 2);
     
