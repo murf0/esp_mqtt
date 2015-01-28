@@ -50,6 +50,14 @@ char statustopic[64];
 int GPIOS[6] = {2,12,13,14,15,16};
 int deepsleep = 60; // Deep sleep when mqtt-msg recieved. After the timer is up ESP will wake as from boot (rst pin pulled from
 
+
+//If hung restart device.
+#define user_procTaskPrio        0
+#define user_procTaskQueueLen    1
+os_event_t    user_procTaskQueue[user_procTaskQueueLen];
+static void user_procTask(os_event_t *events);
+static volatile os_timer_t watchdog_timer;
+
 void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status) {
 	if(status == STATION_GOT_IP){
 		MQTT_Connect(&mqttClient);
@@ -60,7 +68,7 @@ void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
     char tBuf[128];
     int temperature;
-    os_sprintf(statustopic,"iot/%s/status",sysCfg.device_id);
+    os_sprintf(statustopic,"iot/%s/status/temperature",sysCfg.device_id);
     if(dbg==1) INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
     if(dbg==1) INFO("TEST DS18B20\n");
     //Subscribe to the statustopic. When message has been delivered we will deep-sleep to conserve energy
@@ -94,25 +102,29 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
 	topicBuf[topic_len] = 0;
 	os_memcpy(dataBuf, data, data_len);
 	dataBuf[data_len] = 0;
+    
+    uint32 runtime=system_get_time(); //us
+    if(runtime > 15*1000000) {
+        if(dbg==1) INFO("Runtime above 15s (%d) setting sleeptime to 45s\n",runtime/1000000);
+        runtime=15*1000000;
+    }
     if(dbg==1) INFO("Received on topic: %s Data: %s\n Going to Sleep for %d\n", topicBuf,dataBuf,deepsleep);
-    system_deep_sleep(1000000*deepsleep);
+    system_deep_sleep(1000000*deepsleep-runtime);
 }
 
 void ICACHE_FLASH_ATTR user_init(void) {
     char temp[128];
 	uart_init(BIT_RATE_115200, BIT_RATE_115200);
 	os_delay_us(1000000);
-	CFG_Load();
+    os_timer_disarm(&watchdog_timer);
+    os_timer_setfn(&watchdog_timer, (os_timer_func_t *)system_restart, NULL);
+    os_timer_arm(&watchdog_timer, 1000000*20, 1);
     
-    
+    CFG_Load();
     
 	MQTT_InitConnection(&mqttClient, sysCfg.mqtt_host, sysCfg.mqtt_port, sysCfg.security);
-	//MQTT_InitConnection(&mqttClient, "192.168.11.122", 1880, 0);
-
 	MQTT_InitClient(&mqttClient, sysCfg.device_id, sysCfg.mqtt_user, sysCfg.mqtt_pass, sysCfg.mqtt_keepalive, 1);
-	//MQTT_InitClient(&mqttClient, "client_id", "user", "pass", 120, 1);
-
-	//MQTT_InitLWT(&mqttClient, "/lwt", "offline", 0, 0);
+//	MQTT_InitLWT(&mqttClient, lwttopic, "offline", 0, 0);
 	MQTT_OnConnected(&mqttClient, mqttConnectedCb);
 	MQTT_OnDisconnected(&mqttClient, mqttDisconnectedCb);
 	MQTT_OnPublished(&mqttClient, mqttPublishedCb);
