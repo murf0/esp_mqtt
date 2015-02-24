@@ -109,6 +109,7 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
         runtime=15*1000000;
     }
     if(dbg==1) INFO("Received on topic: %s Data: %s\n Going to Sleep for %d\n", topicBuf,dataBuf,deepsleep);
+    deep_sleep_set_option(1); //Do RF_CAl. Stop the no buf bug? Costs a lot of current
     system_deep_sleep(1000000*deepsleep-runtime);
 }
 

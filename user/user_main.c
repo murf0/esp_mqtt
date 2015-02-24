@@ -28,11 +28,6 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Ok some tips
- * Fatal exception (28): = Trying to use a freed pointer. (aka sending a message with mqtt, then freeing the char buffer)
- *
- *
- */
 
 #include "ets_sys.h"
 #include "driver/uart.h"
@@ -49,9 +44,8 @@ MQTT_Client mqttClient;
 char statustopic[64];
 int GPIOS[6] = {2,12,13,14,15,16};
 int deepsleep = 60; // Deep sleep when mqtt-msg recieved. After the timer is up ESP will wake as from boot (rst pin pulled from
+int temp_sent = 0;
 
-
-//If hung restart device.
 #define user_procTaskPrio        0
 #define user_procTaskQueueLen    1
 os_event_t    user_procTaskQueue[user_procTaskQueueLen];
@@ -72,12 +66,14 @@ void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
     if(dbg==1) INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
     if(dbg==1) INFO("TEST DS18B20\n");
     //Subscribe to the statustopic. When message has been delivered we will deep-sleep to conserve energy
-    MQTT_Subscribe(client, statustopic, 0);
+    // We do this in the mqttpublishedCB instead. using the global variable temp_sent as holder.
+    //MQTT_Subscribe(client, statustopic, 0);
     
     //Send Temperature Data
     ds_get_temp(2,tBuf);
     if(dbg==1) INFO("Temperature: %s \n", tBuf);
     MQTT_Publish(client, statustopic, tBuf, os_strlen(tBuf), 2, 0);
+    temp_sent=1;
     
 }
 
@@ -89,6 +85,16 @@ void ICACHE_FLASH_ATTR mqttDisconnectedCb(uint32_t *args) {
 void ICACHE_FLASH_ATTR mqttPublishedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
 	INFO("MQTT: Published\r\n");
+    if(sent==1) {
+        uint32 runtime=system_get_time(); //us
+        if(runtime > 15*1000000) {
+            if(dbg==1) INFO("Runtime above 15s (%d) setting sleeptime to 45s\n",runtime/1000000);
+            runtime=15*1000000;
+        }
+        if(dbg==1) INFO("Received on topic: %s Data: %s\n Going to Sleep for %d\n", topicBuf,dataBuf,deepsleep);
+        deep_sleep_set_option(1); //Do RF_CAl. Stop the "no buf" bug? Costs a lot of current
+        system_deep_sleep(1000000*deepsleep-runtime);
+    }
 }
 
 void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len) {
@@ -103,13 +109,7 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
 	os_memcpy(dataBuf, data, data_len);
 	dataBuf[data_len] = 0;
     
-    uint32 runtime=system_get_time(); //us
-    if(runtime > 15*1000000) {
-        if(dbg==1) INFO("Runtime above 15s (%d) setting sleeptime to 45s\n",runtime/1000000);
-        runtime=15*1000000;
-    }
-    if(dbg==1) INFO("Received on topic: %s Data: %s\n Going to Sleep for %d\n", topicBuf,dataBuf,deepsleep);
-    system_deep_sleep(1000000*deepsleep-runtime);
+
 }
 
 void ICACHE_FLASH_ATTR user_init(void) {
