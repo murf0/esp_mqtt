@@ -13,8 +13,8 @@
 #define MQTT_KEEPALIVE		120	 /*second*/
 
 #define MQTT_CLIENT_ID		"DVES_%08X"
-#define MQTT_USER			"mqtt"
-#define MQTT_PASS			"LongTime"
+#define MQTT_USER			"thebutton"
+#define MQTT_PASS			"thebutton"
 
 #define STA_SSID "Murf_2"
 #define STA_PASS "jagharenlitenkatt"
