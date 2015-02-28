@@ -24,14 +24,14 @@ ESPTOOL		?= /Volumes/esp-open-sdk/esptool/esptool.py
 ESPPORT		?= /dev/tty.wchusbserial14*
 
 # name for the target project
-TARGET		= thebutton
+TARGET		= esp_mqtt_switch
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES	= user lib/esphttpd/user lib/mqtt/mqtt  driver 
+MODULES	= user lib/mqtt/mqtt lib/mqtt/modules/ driver 
 ifdef C99
-MODULES	= lib/esphttpd/user
+MODULES	= 
 endif
-EXTRA_INCDIR	= include $(SDK_BASE)/../include lib/heatshrink lib/esphttpd/include lib/esphttpd/user lib/mqtt/include lib/mqtt/mqtt
+EXTRA_INCDIR	= include $(SDK_BASE)/../include lib/mqtt/include lib/mqtt/mqtt lib/mqtt/modules/include/
 
 # libraries used in this project, mainly provided by the SDK
 LIBS		= c gcc hal phy pp net80211 lwip wpa upgrade main ssl

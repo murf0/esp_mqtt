@@ -126,3 +126,70 @@
 #define UART_DATE( i )                          (REG_UART_BASE( i ) + 0x78)
 #define UART_ID( i )                            (REG_UART_BASE( i ) + 0x7C)
 #endif // UART_REGISTER_H_INCLUDED
+
+#define RX_BUFF_SIZE    256
+#define TX_BUFF_SIZE    100
+#define UART0   0
+#define UART1   1
+
+typedef enum {
+    FIVE_BITS = 0x0,
+    SIX_BITS = 0x1,
+    SEVEN_BITS = 0x2,
+    EIGHT_BITS = 0x3
+} UartBitsNum4Char;
+
+typedef enum {
+    ONE_STOP_BIT             = 0,
+    ONE_HALF_STOP_BIT        = BIT2,
+    TWO_STOP_BIT             = BIT2
+} UartStopBitsNum;
+
+typedef enum {
+    NONE_BITS = 0,
+    ODD_BITS   = 0,
+    EVEN_BITS = BIT4
+} UartParityMode;
+
+typedef enum {
+    STICK_PARITY_DIS   = 0,
+    STICK_PARITY_EN    = BIT3 | BIT5
+} UartExistParity;
+
+typedef enum {
+    BIT_RATE_9600     = 9600,
+    BIT_RATE_19200   = 19200,
+    BIT_RATE_38400   = 38400,
+    BIT_RATE_57600   = 57600,
+    BIT_RATE_74880   = 74880,
+    BIT_RATE_115200 = 115200,
+    BIT_RATE_230400 = 230400,
+    BIT_RATE_460800 = 460800,
+    BIT_RATE_921600 = 921600
+} UartBautRate;
+
+typedef enum {
+    NONE_CTRL,
+    HARDWARE_CTRL,
+    XON_XOFF_CTRL
+} UartFlowCtrl;
+
+typedef enum {
+    EMPTY,
+    UNDER_WRITE,
+    WRITE_OVER
+} RcvMsgBuffState;
+
+typedef struct {
+    uint32   TrxBuffSize;
+    uint8   *pTrxBuff;
+} TrxMsgBuff;
+
+typedef enum {
+    BAUD_RATE_DET,
+    WAIT_SYNC_FRM,
+    SRCH_MSG_HEAD,
+    RCV_MSG_BODY,
+    RCV_ESC_CHAR,
+} RcvMsgState;
+
