@@ -139,22 +139,12 @@ $(BUILD_DIR):
 firmware:
 	$(Q) mkdir -p $@
 
-flash: $(FW_FILE) webpages.espfs
-	$(Q) $(PYTHON) $(ESPTOOL) -p $(ESPPORT) write_flash 0x00000 firmware/0x00000.bin 0x3c000 firmware/0x3c000.bin 0x12000 webpages.espfs
-
-webpages.espfs: html/ mkespfsimage
-	cd html; find . | ../mkespfsimage > ../webpages.espfs; cd ..
-
-mkespfsimage: lib/esphttpd/mkespfsimage/
-	make -C lib/esphttpd/mkespfsimage
-	mv lib/esphttpd/mkespfsimage/mkespfsimage ./
+flash: $(FW_FILE)
+	$(Q) $(PYTHON) $(ESPTOOL) -p $(ESPPORT) write_flash 0x00000 firmware/0x00000.bin 0x2C000 $(BLANKER) 0x3c000 firmware/0x3c000.bin
+#	$(Q) $(PYTHON) $(ESPTOOL) -p $(ESPPORT) write_flash 0x00000 firmware/0x00000.bin 0x40000 firmware/0x40000.bin
 
 resetflash:
 	$(PYTHON) $(ESPTOOL) -p $(ESPPORT) write_flash 0x7e000 $(BLANKER)
-
-htmlflash: webpages.espfs
-	if [ $$(stat -f '%z' webpages.espfs) -gt $$(( 0x2E000 )) ]; then echo "webpages.espfs too big!"; false; fi
-	$(PYTHON) $(ESPTOOL) -p $(ESPPORT) write_flash 0x12000 webpages.espfs
 
 test: flash
 	$(vecho) screen $(ESPPORT) 115200

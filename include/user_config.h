@@ -7,14 +7,14 @@
 
 /*DEFAULT CONFIGURATIONS*/
 
-#define MQTT_HOST			"mqtt.murf.se" //or "mqtt.yourdomain.com"
+#define MQTT_HOST			"NA" //or "mqtt.yourdomain.com"
 #define MQTT_PORT			8885
 #define MQTT_BUF_SIZE		1024
 #define MQTT_KEEPALIVE		120	 /*second*/
 
 #define MQTT_CLIENT_ID		"%08X"
-#define MQTT_USER			"thebutton"
-#define MQTT_PASS			"thebutton"
+#define MQTT_USER			"home_aut"
+#define MQTT_PASS			"cakedoesnotwork"
 
 #define STA_SSID "Murf_2"
 #define STA_PASS "jagharenlitenkatt"
