@@ -27,28 +27,31 @@ void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status) {
         MQTT_Disconnect(&mqttClient);
         INFO("TIMER: Disconnect MQTT\n");
         os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
-        os_timer_arm(&btnWiFiLinker, 2000, 0);
+        os_timer_arm(&btnWiFiLinker, MQTT_RECONNECT_TIMEOUT*1000, 0);
     }
 }
 
 void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
     MQTT_Client* client = (MQTT_Client*)args;
-    char temp[64];
-    char temperature[128];
+    char temp[128];
+    char offline[64];
     os_sprintf(subtopic,"iot/switch/%s/set",mqttcfg.client_id);
     os_sprintf(statustopic,"iot/switch/%s/status",mqttcfg.client_id);
+    os_sprintf(temp,CAPABILITY, mqttcfg.client_id,subtopic);
+    os_sprintf(offline,"{\"%s\":{\"Adress\":\"%s\",\"Capability\":\"OFFLINE\"}}",mqttcfg.client_id,subtopic);
+    MQTT_InitLWT(client,statustopic, offline, 2, 1);
     MQTT_Subscribe(client, subtopic, 2);
     INFO("MQTT: Connected! subscribe to: %s\r\n", subtopic);
     INFO("MQTT: Connected! Statustopic to: %s\r\n", statustopic);
-    //os_sprintf(temp,"Switch: Connected! subscribed to: %s\r\n", subtopic);
-    os_sprintf(temp,""{\"%s\":\"%s\"}", mqttcfg.client_id,subtopic);
-    
+    INFO("%s\n",temp);
     MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 1);
 }
 
 void ICACHE_FLASH_ATTR mqttDisconnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
 	INFO("MQTT: Disconnected\r\n");
+    os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
+    os_timer_arm(&btnWiFiLinker, MQTT_RECONNECT_TIMEOUT*1000, 0);
 }
 
 void ICACHE_FLASH_ATTR mqttPublishedCb(uint32_t *args) {
@@ -61,7 +64,8 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
 			*dataBuf = (char*)os_zalloc(data_len+1);
 	MQTT_Client* client = (MQTT_Client*)args;
     int i;
-    char *tmp_gpios, *status, *out,*temp, *clean;
+    char *tmp_gpios, *status, *out;
+    char temp[128];
     
 	os_memcpy(topicBuf, topic, topic_len);
 	topicBuf[topic_len] = 0;
@@ -77,27 +81,89 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
      {\"GPIO02\":\"OFF\"}
      */
     if(os_strcmp(dataBuf,"{\"GPIO02\":\"ON\"}")==0) {
-        INFO("ON\n");
-        GPIO_OUTPUT_SET(2, 1);
+        if(NPN) {
+            // For the NPN transistor, Set to LOW (0V) to source current turning on the BC3906 NPN
+            gpio_output_set(0, BIT2, BIT2, 0);
+            INFO("ON - NPN\n");
+        } else if(ACTIVE_LOW) {
+            // GPIO set to LOW, sourcing current. 0V
+            GPIO_OUTPUT_SET(2, 0);
+            INFO("ON - ACTIVE_LOW\n");
+        } else {
+            // Setting to high (3.3V) , Logical for ON..
+            GPIO_OUTPUT_SET(2, 1);
+            INFO("ON - NORMAL\n");
+        }
+        os_sprintf(temp,"{\"%s\":{\"GPIO02\":\"ON\"}}", mqttcfg.client_id);
+        MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 0);
     }
     if(os_strcmp(dataBuf,"{\"GPIO02\":\"OFF\"}")==0) {
-        INFO("OFF\n");
-        GPIO_OUTPUT_SET(2, 0);
+        if(NPN) {
+            // For the NPN transistor, Set to FLOATING to stop source current turning off the BC3906 NPN, if is set to HIGH (3.3V) the transistor will not turn off.
+            gpio_output_set(0, 0, 0, BIT2);
+            INFO("OFF - NPN\n");
+        } else if(ACTIVE_LOW) {
+            // Setting to high (3.3V). providing current
+            GPIO_OUTPUT_SET(2, 1);
+            INFO("OFF - ACTIVE_LOW\n");
+        } else {
+            // GPIO set to LOW, sourcing current. 0V
+            GPIO_OUTPUT_SET(2, 0);
+            INFO("OFF - NORMAL\n");
+        }
+        os_sprintf(temp,"{\"%s\":{\"GPIO02\":\"OFF\"}}", mqttcfg.client_id);
+        MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 0);
     }
+    
+    if(os_strcmp(dataBuf,"{\"GPIO13\":\"ON\"}")==0) {
+        if(NPN) {
+            // For the NPN transistor, Set to LOW (0V) to source current turning on the BC3906 NPN
+            gpio_output_set(0, BIT13, BIT13, 0);
+            INFO("ON - NPN\n");
+        } else if(ACTIVE_LOW) {
+            // GPIO set to LOW, sourcing current. 0V
+            GPIO_OUTPUT_SET(13, 0);
+            INFO("ON - ACTIVE_LOW\n");
+        } else {
+            // Setting to high (3.3V) , Logical for ON..
+            GPIO_OUTPUT_SET(13, 1);
+            INFO("ON - NORMAL\n");
+        }
+        os_sprintf(temp,"{\"%s\":{\"GPIO13\":\"ON\"}}", mqttcfg.client_id);
+        MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 0);
+    }
+    if(os_strcmp(dataBuf,"{\"GPIO13\":\"OFF\"}")==0) {
+        if(NPN) {
+            // For the NPN transistor, Set to FLOATING to stop source current turning off the BC3906 NPN, if is set to HIGH (3.3V) the transistor will not turn off.
+            gpio_output_set(0, 0, 0, BIT13);
+            INFO("OFF - NPN\n");
+        } else if(ACTIVE_LOW) {
+            // Setting to high (3.3V). providing current
+            GPIO_OUTPUT_SET(13, 1);
+            INFO("OFF - ACTIVE_LOW\n");
+        } else {
+            // GPIO set to LOW, sourcing current. 0V
+            GPIO_OUTPUT_SET(13, 0);
+            INFO("OFF - NORMAL\n");
+        }
+        os_sprintf(temp,"{\"%s\":{\"GPIO13\":\"OFF\"}}", mqttcfg.client_id);
+        MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 0);
+    }
+
     os_free(dataBuf);
 }
 
                
 void ICACHE_FLASH_ATTR init_mqtt(void) {
     
-    os_sprintf(mqttcfg.mqtt_host, "%s", "mqtt.murf.se");
-    os_sprintf(mqttcfg.mqtt_user, "%s", "home_aut");
-    os_sprintf(mqttcfg.mqtt_pass, "%s", "cakedoesnotwork");
+    os_sprintf(mqttcfg.mqtt_host, "%s", MQTT_HOST);
+    os_sprintf(mqttcfg.mqtt_user, "%s", MQTT_USER);
+    os_sprintf(mqttcfg.mqtt_pass, "%s", MQTT_PASS);
     INFO("CHIPID: %08X\n",system_get_chip_id());
-    os_sprintf(mqttcfg.client_id, "%08X", system_get_chip_id());
-    mqttcfg.mqtt_port=8885;
-    mqttcfg.mqtt_keepalive=120;
-    mqttcfg.security = 1; // 1=ssl (max 1024bit certificate) 0=nonssl
+    os_sprintf(mqttcfg.client_id, MQTT_CLIENT_ID, system_get_chip_id());
+    mqttcfg.mqtt_port=MQTT_PORT;
+    mqttcfg.mqtt_keepalive=MQTT_KEEPALIVE;
+    mqttcfg.security = DEFAULT_SECURITY;
     INFO("host: %s Port: %d Security: %d \n", mqttcfg.mqtt_host, mqttcfg.mqtt_port, mqttcfg.security);
 	MQTT_InitConnection(&mqttClient, mqttcfg.mqtt_host, mqttcfg.mqtt_port, mqttcfg.security);
     

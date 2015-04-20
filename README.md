@@ -12,6 +12,10 @@ Set status of arbitrary GPIO pin (on-off for now) via MQtt Message
 [Murf](https://murf.se)
 
 
+**Hardware**
+GPIO2 is connected to a NPN transistor. Base Collector Emmiter. GPIO2 to 1k resistor to Base of a NPN 3906 Transistor. Collector is conneted to Ground, Emittor is connected to the Relay. groound of relay to 5.0v (USB)
+ESP8266 -03, GPIO 15 via 10k resistor to ground, CH_PD via 10k resistor to VCC 3.3v regulator AMS1117 connected to VCC5.0
+
 **LICENSE - "MIT License"**
 
 esp_mqtt_gen_purpose: Copyright (c) 2014-2015 Murf, https://murf.se

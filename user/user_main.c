@@ -38,21 +38,27 @@
 #include "switch_mqtt.h"
 
 int GPIOS[6] = {2,12,13,14,15,16};
-int dbg=1;
+
 
 void ICACHE_FLASH_ATTR local_init_gpio(void) {
     int initstate = 0;
     gpio_init();
     //Set GPIOS to output mode
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
-    //PIN_PULLDWN_EN(2);
-    //PIN_PULLUP_EN(FUNC_GPIO2);
-    //gpio_output_set(0, BIT2, BIT2, 0);
-    GPIO_OUTPUT_SET(FUNC_GPIO2,1);
-    
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);
+    if(NPN) {
+        gpio_output_set(0, 0, 0, BIT2);
+        gpio_output_set(0, 0, 0, BIT13);
+    } else if(ACTIVE_LOW) {
+        GPIO_OUTPUT_SET(2, 1);
+        GPIO_OUTPUT_SET(13, 1);
+    } else {
+        GPIO_OUTPUT_SET(2, 0);
+        GPIO_OUTPUT_SET(13, 0);
+    }
     /*
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);
+    
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
     // PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
     // PIN_FUNC_SELECT(PERIPHS_IO_MUX_XPD_DCDC_U, FUNC_GPIO16);

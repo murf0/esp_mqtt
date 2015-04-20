@@ -7,25 +7,46 @@
 
 /*DEFAULT CONFIGURATIONS*/
 
-#define MQTT_HOST			"NA" //or "mqtt.yourdomain.com"
+#define MQTT_HOST			"mqtt.murf.se" //or "mqtt.yourdomain.com"
 #define MQTT_PORT			8885
-#define MQTT_BUF_SIZE		1024
-#define MQTT_KEEPALIVE		120	 /*second*/
 
-#define MQTT_CLIENT_ID		"%08X"
 #define MQTT_USER			"home_aut"
 #define MQTT_PASS			"cakedoesnotwork"
-
-#define STA_SSID "Murf_2"
-#define STA_PASS "jagharenlitenkatt"
-#define STA_TYPE AUTH_WPA2_PSK
-
+#define MQTT_CLIENT_ID		"%08X"
 #define MQTT_RECONNECT_TIMEOUT 	5	/*second*/
+#define MQTT_BUF_SIZE		1024
+#define MQTT_KEEPALIVE		120	 /*second*/
 
 #define DEFAULT_SECURITY	1 /*1=SSL 0=None*/
 #define QUEUE_BUFFER_SIZE		 		2048
 
 #define PROTOCOL_NAMEv31	/*MQTT version 3.1 compatible with Mosquitto v0.15*/
-//PROTOCOL_NAMEv311			/*MQTT version 3.11 compatible with https://eclipse.org/paho/clients/testing/*/
+//#define PROTOCOL_NAMEv311			/*MQTT version 3.11 compatible with https://eclipse.org/paho/clients/testing/*/
+
+
+
+/* HOME */
+
+#define STA_SSID "Murf_2"
+#define STA_PASS "jagharenlitenkatt"
+
+/* Caravan */
+/*
+#define STA_SSID "trackerd"
+#define STA_PASS "tinycartrackrd"
+*/
+#define STA_TYPE AUTH_WPA2_PSK
+
+/*Set up debug messages*/
+#define dbg 1
+
+/*Set up type of switch only 1 should be true Normal is Active High and Inactive Low*/
+/*ACTIVE is active low and inactive High (Eg, Relay boards from Ebay)*/
+#define ACTIVE_LOW false
+/*NPN is active low and inactive Floating*/
+#define NPN true
+
+/*#define CAPABILITY "{\"%s\":{\"Adress\":\"%s\",\"Capability\":{\"GPIO02\": \"true\",\"GPIO13\": \"true\"}}}"*/
+#define CAPABILITY "{\"%s\":{\"Adress\":\"%s\",\"Capability\":{\"GPIO02\": \"true\"}}}"
 
 #endif
