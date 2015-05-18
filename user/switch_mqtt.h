@@ -1,6 +1,7 @@
 #ifndef SWITCH_MQTT_H
 #define SWITCH_MQTT_H
 
+#define BTNGPIO 0
 #include "os_type.h"
 #include "user_config.h"
 #include "mqtt.h"

@@ -16,20 +16,9 @@ MQTT_Client mqttClient;
 char subtopic[64];
 char statustopic[64];
 MQTTCFG mqttcfg;
-int ledslit=0;
+int ledslit=0,ON=0;
 
-void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status) {
-    os_timer_disarm(&btnWiFiLinker);
-    if(wifi_station_get_connect_status() == STATION_GOT_IP){
-        MQTT_Connect(&mqttClient);
-        INFO("****************\nTIMER: Connect MQTT\n****************\n");
-    } else {
-        MQTT_Disconnect(&mqttClient);
-        INFO("TIMER: Disconnect MQTT\n");
-        os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
-        os_timer_arm(&btnWiFiLinker, MQTT_RECONNECT_TIMEOUT*1000, 0);
-    }
-}
+ETSTimer btnDebounceTimer;
 
 void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
     MQTT_Client* client = (MQTT_Client*)args;
@@ -153,7 +142,62 @@ void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t to
     os_free(dataBuf);
 }
 
-               
+void btnDebounceCb() {
+    char temp[128];
+    if(!GPIO_INPUT_GET(BTNGPIO)) {
+        INFO("****************\nTIMER: CHECKDEBOUNCE BTN0 Pressed\n****************\n");
+        //DO STUFF!
+        if(ON==0) {
+            if(NPN) {
+                // For the NPN transistor, Set to LOW (0V) to source current turning on the BC3906 NPN
+                gpio_output_set(0, BIT2, BIT2, 0);
+                INFO("ON - NPN\n");
+            } else if(ACTIVE_LOW) {
+                // GPIO set to LOW, sourcing current. 0V
+                GPIO_OUTPUT_SET(2, 0);
+                INFO("ON - ACTIVE_LOW\n");
+            } else {
+                // Setting to high (3.3V) , Logical for ON..
+                GPIO_OUTPUT_SET(2, 1);
+                INFO("ON - NORMAL\n");
+            }
+            os_sprintf(temp,"{\"%s\":{\"GPIO02\":\"ON\"}}", mqttcfg.client_id);
+            MQTT_Publish(&mqttClient, statustopic, temp, os_strlen(temp), 2, 0);
+            ON=1;
+        } else {
+            if(NPN) {
+                // For the NPN transistor, Set to FLOATING to stop source current turning off the BC3906 NPN, if is set to HIGH (3.3V) the transistor will not turn off.
+                gpio_output_set(0, 0, 0, BIT2);
+                INFO("OFF - NPN\n");
+            } else if(ACTIVE_LOW) {
+                // Setting to high (3.3V). providing current
+                GPIO_OUTPUT_SET(2, 1);
+                INFO("OFF - ACTIVE_LOW\n");
+            } else {
+                // GPIO set to LOW, sourcing current. 0V
+                GPIO_OUTPUT_SET(2, 0);
+                INFO("OFF - NORMAL\n");
+            }
+            os_sprintf(temp,"{\"%s\":{\"GPIO02\":\"OFF\"}}", mqttcfg.client_id);
+            MQTT_Publish(&mqttClient, statustopic, temp, os_strlen(temp), 2, 0);
+            ON=0;
+        }
+        
+        //Done Stuff
+        os_timer_disarm(&btnDebounceTimer);
+        os_delay_us(1000000);
+        os_timer_setfn(&btnDebounceTimer, (os_timer_func_t *)btnDebounceCb, NULL);
+        os_timer_arm(&btnDebounceTimer, 100, 1);
+    }
+}
+void wifiConnectCb(uint8_t status) {
+    /*if(status == STATION_GOT_IP){
+        MQTT_Connect(&mqttClient);
+    } else {
+        MQTT_Disconnect(&mqttClient);
+    }
+     */
+}
 void ICACHE_FLASH_ATTR init_mqtt(void) {
     
     os_sprintf(mqttcfg.mqtt_host, "%s", MQTT_HOST);
@@ -173,11 +217,10 @@ void ICACHE_FLASH_ATTR init_mqtt(void) {
 	MQTT_OnDisconnected(&mqttClient, mqttDisconnectedCb);
 	MQTT_OnPublished(&mqttClient, mqttPublishedCb);
 	MQTT_OnData(&mqttClient, mqttDataCb);
-	
-    //MQTT_Connect(&mqttClient);
-    //Timer to make sure the MQTTclient is connected
-    INFO("MQtt Arm timers?\n");
-    os_timer_disarm(&btnWiFiLinker);
-    os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
-    os_timer_arm(&btnWiFiLinker, 2000, 0);
+
+    // Do button
+    INFO("Button Arm timer\n");
+    os_timer_disarm(&btnDebounceTimer);
+    os_timer_setfn(&btnDebounceTimer, (os_timer_func_t *)btnDebounceCb, NULL);
+    os_timer_arm(&btnDebounceTimer, 100, 1);
 }

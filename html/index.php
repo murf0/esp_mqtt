@@ -27,7 +27,6 @@
 		display: inline-block;
 	}
 
-
     .formLayout {
     	font-size: 12px;
 		text-align: left;
@@ -45,8 +44,8 @@
         float: left;
         margin-bottom: 5px;
         position: relative;
-  top: 50%;
-  transform: translateY(-50%);
+  		top: 50%;
+  		transform: translateY(-50%);
     }
  
     .formLayout label {
@@ -87,6 +86,7 @@
 			document.getElementById('STATUS').innerHTML = message.payloadString + "<br />" + document.getElementById('STATUS').innerHTML;
 			//check to see if payload is JSON
 			try {
+				var NO_OUTPUT = "false";
 				var msgjson = jQuery.parseJSON(message.payloadString); //parse payload
 				var output = "<label>Device"
 				var NOTFIRST = "false";
@@ -96,6 +96,18 @@
 					console.log("DEVICE:" + device);
 					var adress=msgjson[key]["Adress"];
 					console.log("Adress:" + adress);
+					//Check if the message is on or off status message.
+					for (var OL in msgjson[key]) {
+						if(msgjson[key][OL] === "ON" || msgjson[key][OL] === "OFF") {
+							NO_OUTPUT = "true";
+							console.log("ON or OFF");
+						}
+					}
+					//check if the device is offline (LWT message from prev connected device)
+					if(msgjson[key]["Capability"] === "OFFLINE") {
+						NO_OUTPUT = "true";
+						console.log("OFFLINE");
+					}
 					for (var key2 in msgjson[key]["Capability"]) {
 						var GPIO=msgjson[key]["Capability"][key2];
 						if(NOTFIRST==="true") {
@@ -107,10 +119,13 @@
 						NOTFIRST="true";
 					}
 					if(NOTFIRST==="false") {
-							output = output + "<br />";
+						output = output + "<br />";
 					}
-					document.getElementById("BUTTONS").innerHTML = output + document.getElementById("BUTTONS").innerHTML;
-					console.log(output);
+					//IF LWT or status message do not change the buttons.
+					if(NO_OUTPUT !== "true") {
+						document.getElementById("BUTTONS").innerHTML = output + document.getElementById("BUTTONS").innerHTML;
+						console.log(output);
+					}		
 				}
 			} catch (e) {
 				console.log(e);
@@ -120,6 +135,7 @@
 		}
 		function onConnect() {
 			// Once a connection has been made, make a subscription and send a message.
+			document.getElementById("BUTTONS").innerHTML = "";
 			console.log("onConnect Sub to: iot/switch/+/status");
 			mqtt.subscribe("iot/switch/+/status", {qos:1,onSuccess:onSubscribe,onFailure:onSubscribeFailure});
 		};
@@ -134,6 +150,7 @@
 			setTimeout(MQTTConnect, reconnectTimeout);
 		}
 		function onConnectionLost(responseObject) {
+			document.getElementById("BUTTONS").innerHTML = "<br />Connection Lost<br />";
 		  if (responseObject.errorCode !== 0)
 		    console.log("onConnectionLost:"+responseObject.errorMessage);
 		    setTimeout(MQTTConnect, reconnectTimeout);

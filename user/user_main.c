@@ -36,6 +36,7 @@
 #include "mem.h"
 #include "config.h"
 #include "switch_mqtt.h"
+#include "wifi_handler.h"
 
 int GPIOS[6] = {2,12,13,14,15,16};
 
@@ -56,6 +57,7 @@ void ICACHE_FLASH_ATTR local_init_gpio(void) {
         GPIO_OUTPUT_SET(2, 0);
         GPIO_OUTPUT_SET(13, 0);
     }
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
     /*
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
     
@@ -73,8 +75,7 @@ void ICACHE_FLASH_ATTR local_init_gpio(void) {
 
 void ICACHE_FLASH_ATTR user_init(void) {
     stdoutInit();
-    //system_restore();
-    //system_restart();
+    wifi_set_event_handler_cb(btn_wifi_handle_event_cb);
     INFO("\nlocal_init_gpio\n");
     local_init_gpio();
     

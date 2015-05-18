@@ -47,6 +47,6 @@
 #define NPN true
 
 /*#define CAPABILITY "{\"%s\":{\"Adress\":\"%s\",\"Capability\":{\"GPIO02\": \"true\",\"GPIO13\": \"true\"}}}"*/
-#define CAPABILITY "{\"%s\":{\"Adress\":\"%s\",\"Capability\":{\"GPIO02\": \"true\"}}}"
+#define CAPABILITY "{\"%s\":{\"Adress\":\"%s\",\"Capability\":{\"GPIO02\": \"true\"}}}" 
 
 #endif
