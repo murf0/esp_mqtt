@@ -93,6 +93,7 @@
 				for (var key in msgjson) {
 					var device=key;
 					output = output + key + ": </label>";
+					output = output + "<button style=\"width: 7px;\" onclick='publish(\"{\\\""+device+"\\\":{\\\"Adress\\\":\\\"iot/switch/"+device+"/set\\\",\\\"Capability\\\":\\\"OFFLINE\\\"}}\",\"iot/switch/"+device+"/status\",2,true);'>-</button>";
 					console.log("DEVICE:" + device);
 					var adress=msgjson[key]["Adress"];
 					console.log("Adress:" + adress);
@@ -113,8 +114,8 @@
 						if(NOTFIRST==="true") {
 							output = output + "<label></label>";
 						}
-						output = output + "<label>" + key2 +"</label>"+ "<button onclick='publish(\"{\\\""+key2+"\\\":\\\"ON\\\"}\",\""+adress+"\",2);'>ON</button>";
-						output = output + "<button onclick='publish(\"{\\\""+key2+"\\\":\\\"OFF\\\"}\",\""+adress+"\",2);'>OFF</button>";
+						output = output + "<label>" + key2 +"</label>"+ "<button onclick='publish(\"{\\\""+key2+"\\\":\\\"ON\\\"}\",\""+adress+"\",2,false);'>ON</button>";
+						output = output + "<button onclick='publish(\"{\\\""+key2+"\\\":\\\"OFF\\\"}\",\""+adress+"\",2,false);'>OFF</button>";
 						output = output + "<br />";
 						NOTFIRST="true";
 					}
@@ -185,11 +186,12 @@
 		    }
 		
 		}
-		var publish = function (payload, topic, qos) {
-			console.log("Topic: " + topic + "Publish: " + payload);
+		var publish = function (payload, topic, qos, retained) {
+			console.log("Topic: " + topic + " Publish: " + payload);
 			var message = new Paho.MQTT.Message(payload);
 			message.destinationName = topic;
 			message.qos = qos;
+			message.retained = retained;
 			mqtt.send(message);
  		}
 		//Start The Goddamn Program
