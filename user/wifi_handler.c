@@ -2,13 +2,10 @@
  * Adaption By Murf
 */
 #include "switch_mqtt.h"
-
 #include "ets_sys.h"
-#include "osapi.h"
 #include "debug.h"
-#include "mqtt.h"
-#include "gpio.h"
-#include "mem.h"
+#include "osapi.h"
+#include "esp_switch.h"
 
 void btn_wifi_handle_event_cb(System_Event_t *evt){
     INFO("event %x\n", evt->event);
@@ -50,4 +47,16 @@ void btn_wifi_handle_event_cb(System_Event_t *evt){
         default:
         break;
     }
+}
+void ICACHE_FLASH_ATTR init_WIFI(){
+    struct station_config stationConf;
+    wifi_set_event_handler_cb(btn_wifi_handle_event_cb);
+    INFO("init_WIFI\n");
+    wifi_set_opmode(STATION_MODE);
+    wifi_station_set_auto_connect(FALSE);
+    os_sprintf(stationConf.ssid, "%s", STA_SSID);
+    os_sprintf(stationConf.password, "%s", STA_PASS);
+    wifi_station_set_config(&stationConf);
+    wifi_station_set_auto_connect(TRUE);
+    wifi_station_connect();
 }

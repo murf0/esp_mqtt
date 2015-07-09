@@ -27,7 +27,7 @@ ESPPORT		?= /dev/tty.wchusbserial14*
 TARGET		= esp_mqtt_switch
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES	= user lib/mqtt/mqtt lib/mqtt/modules/ driver 
+MODULES	= user lib/mqtt/mqtt driver 
 ifdef C99
 MODULES	= 
 endif

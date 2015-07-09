@@ -1,11 +1,8 @@
 /* save_config.h
 *
 */
-
-#ifndef SAVE_CONFIG_H_
-#define SAVE_CONFIG_H_
-#include "os_type.h"
-#include "user_config.h"
+#ifndef SAVE_CONFIG_H
+#define SAVE_CONFIG_H
 
 #define CONFIG_LOCATION 0x3C
 
@@ -16,4 +13,4 @@ typedef struct{
 void ICACHE_FLASH_ATTR saveConfig();
 void ICACHE_FLASH_ATTR loadConfig();
 
-endif
+#endif

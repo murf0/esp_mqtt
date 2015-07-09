@@ -1,16 +1,17 @@
 /* 
  * Adaption By Murf
 */
-#include "switch_mqtt.h"
-
-#include "ets_sys.h"
 #include "osapi.h"
+
+#include "switch_mqtt.h"
 #include "debug.h"
-#include "mqtt.h"
 #include "gpio.h"
 #include "mem.h"
+#include "esp_switch.h"
 
-static ETSTimer btnWiFiLinker;
+
+
+//static ETSTimer btnWiFiLinker;
 
 MQTT_Client mqttClient;
 char subtopic[64];
@@ -36,11 +37,12 @@ void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args) {
     MQTT_Publish(client, statustopic, temp, os_strlen(temp), 2, 1);
 }
 
+
 void ICACHE_FLASH_ATTR mqttDisconnectedCb(uint32_t *args) {
 	MQTT_Client* client = (MQTT_Client*)args;
 	INFO("MQTT: Disconnected\r\n");
-    os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
-    os_timer_arm(&btnWiFiLinker, MQTT_RECONNECT_TIMEOUT*1000, 0);
+    //os_timer_setfn(&btnWiFiLinker, (os_timer_func_t *)wifiConnectCb, NULL);
+    //os_timer_arm(&btnWiFiLinker, MQTT_RECONNECT_TIMEOUT*1000, 0);
 }
 
 void ICACHE_FLASH_ATTR mqttPublishedCb(uint32_t *args) {
@@ -199,15 +201,14 @@ void wifiConnectCb(uint8_t status) {
      */
 }
 void ICACHE_FLASH_ATTR init_mqtt(void) {
-    
-    os_sprintf(mqttcfg.mqtt_host, "%s", MQTT_HOST);
-    os_sprintf(mqttcfg.mqtt_user, "%s", MQTT_USER);
-    os_sprintf(mqttcfg.mqtt_pass, "%s", MQTT_PASS);
+    os_sprintf(mqttcfg.mqtt_host, "%s", "mqtt.murf.se");
+    os_sprintf(mqttcfg.mqtt_user, "%s", "home_aut");
+    os_sprintf(mqttcfg.mqtt_pass, "%s", "cakedoesnotwork");
     INFO("CHIPID: %08X\n",system_get_chip_id());
-    os_sprintf(mqttcfg.client_id, MQTT_CLIENT_ID, system_get_chip_id());
-    mqttcfg.mqtt_port=MQTT_PORT;
-    mqttcfg.mqtt_keepalive=MQTT_KEEPALIVE;
-    mqttcfg.security = DEFAULT_SECURITY;
+    os_sprintf(mqttcfg.client_id, "%08X", system_get_chip_id());
+    mqttcfg.mqtt_port=8885;
+    mqttcfg.mqtt_keepalive=120;
+    mqttcfg.security = 1; // 1=ssl (max 1024bit certificate) 0=nonssl
     INFO("host: %s Port: %d Security: %d \n", mqttcfg.mqtt_host, mqttcfg.mqtt_port, mqttcfg.security);
 	MQTT_InitConnection(&mqttClient, mqttcfg.mqtt_host, mqttcfg.mqtt_port, mqttcfg.security);
     

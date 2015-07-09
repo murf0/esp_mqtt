@@ -11,7 +11,7 @@
 
 #include "ets_sys.h"
 #include "osapi.h"
-#include "uart_hw.h"
+#include "driver/uart_hw.h"
 
 static void ICACHE_FLASH_ATTR stdoutUartTxd(char c) {
 	//Wait until there is room in the FIFO
